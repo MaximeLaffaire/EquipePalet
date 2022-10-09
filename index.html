@@ -1,22 +1,212 @@
 <html>
   <head>
-    <style></style>
-    <script></script>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        display: flex;
+        flex-direction: column;
+        row-gap: 1rem;
+        width: 210mm;
+        height: 297mm;
+        padding: 10mm;
+      }
+
+      #config {
+        display: flex;
+        flex-direction: column;
+        row-gap: 1rem;
+      }
+
+      #sheetName, #tableNumberOfPlayers, #tableNumberOfPlayers select {
+        font-weight: bold;
+        font-size: xx-large;
+        text-align: center;
+      }
+
+      #sheet {
+        border: 1px solid;
+        border-collapse: collapse;
+      }
+      
+      #sheet td, #sheet th {
+        border: 1px solid;
+        text-align: center;
+        font-size: larger;
+
+      }
+
+      .plaque-number {
+        font-weight: bold;
+        font-size: xx-large !important;
+      }
+
+      .versus {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .against {
+        font-style: italic;
+      }
+
+      @media print {
+        #config {
+          display: none;
+        }
+
+        #sheetName {
+          border: none;
+        }
+
+        #tableNumberOfPlayers select {
+          appearance: none;
+          border: none;
+        }
+      }
+
+    </style>
+    <script>
+
+      function initialize() {
+        const numberOfPlayersArray = [...Array(41).keys()].slice(6);
+        const numberOfPlayersPerTeamArray = [...Array(5).keys()].slice(2);
+
+        const selectNumberOfPlayers = document.getElementById('numberOfPlayers');
+        for (let number of numberOfPlayersArray) {
+          const opt = document.createElement('option');
+          opt.value = number;
+          opt.innerHTML = number;
+
+          selectNumberOfPlayers.appendChild(opt);
+        }
+        selectNumberOfPlayers.selectedIndex = 14;
+      }
+
+      function main() {
+        initialize();
+      }
+
+      window.onload = function() {
+        main();
+      }
+
+      function shuffleArray(array) {
+        let currentIndex = array.length,  randomIndex;
+
+        while (currentIndex != 0) {
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex--;
+
+          [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+
+        return array;
+      }
+
+      function chunkArray(array, chunkSize) {
+        const result = [];
+        for (let i = 0; i < array.length; i += chunkSize) {
+          const chunk = array.slice(i, i + chunkSize);
+          result.push(chunk);
+        }
+        return result;
+      }
+
+      function calculateNumberOfTeams(numberOfPlayers, numberOfPlayersPerTeam) {
+        let numberOfTeams = Math.ceil(numberOfPlayers / numberOfPlayersPerTeam);
+        if (numberOfTeams % 2 !== 0) {
+          const numberOfExceedingPlayers = numberOfPlayers - ((numberOfTeams - 1) * numberOfPlayersPerTeam);
+          if (numberOfExceedingPlayers === 1) {
+            numberOfTeams -= 1;
+          } else {
+            numberOfTeams += 1;
+          }
+        }
+        return numberOfTeams;
+      }
+
+      function generateTeams(numberOfPlayers, numberOfPlayersPerTeam) {
+        const players = shuffleArray([...Array(numberOfPlayers).keys()].map(n => n + 1));
+        const teams = chunkArray(players, numberOfPlayersPerTeam);
+        if (teams.length !== calculateNumberOfTeams(numberOfPlayers, numberOfPlayersPerTeam)) {
+          const lastTeam = teams.pop();
+          if (lastTeam.length === 1) {
+            teams[teams.length - 1].push(lastTeam[0]);
+          } else {
+            const lastTeamSplit = Math.floor(lastTeam.length / 2);
+            teams.push(lastTeam.slice(0, lastTeamSplit));
+            teams.push(lastTeam.slice(lastTeamSplit));
+          }
+        }
+
+        return teams;
+      }
+
+      function generateTable() {  
+        const numberOfPlayers = parseInt(document.getElementById("numberOfPlayers").value);
+        const numberOfPlayersPerTeam = 2;
+        const numberOfPlaques = calculateNumberOfTeams(numberOfPlayers, numberOfPlayersPerTeam) / 2;
+        const numberOfGame = 4;
+
+        const tablebody = document.getElementById("table-body");
+        tablebody.innerHTML = '';
+
+        for (let i = 1; i <= numberOfPlaques; i++) {
+          const row = document.createElement('tr');
+          row.setAttribute('id', `plaque${i}`);
+          
+          const plaqueNumber = document.createElement('td');
+          plaqueNumber.setAttribute('class', 'plaque-number');
+          plaqueNumber.innerText = i;
+
+          row.appendChild(plaqueNumber);
+          tablebody.appendChild(row);
+        }
+
+        for (let i = 0; i < numberOfGame; i++) {
+          const teams = generateTeams(numberOfPlayers, numberOfPlayersPerTeam);
+          const versus = chunkArray(teams, 2);
+          for (let j = 1; j <= numberOfPlaques; j++) {
+            const row = document.getElementById(`plaque${j}`);
+            const td = document.createElement('td');
+          
+            td.innerHTML = `<div class='versus'><span>${versus[j-1][0].join('-')}</span><span class='against'> contre </span><span>${versus[j-1][1].join('-')}</span></div>`;
+
+            row.appendChild(td);
+          }
+        }
+      }
+    </script>
   </head>
   <body>
+    <table id="sheet">
+      <tr>
+        <th colspan="3">
+          <input id="sheetName" name="sheetName" value="Entrainement">
+        </th>
+        <th colspan="2" id="tableNumberOfPlayers">
+          <select name="numberOfPlayers" id="numberOfPlayers">
+          </select>
+          <span> Joueurs</span>
+        </th>
+      </tr>
+      <tr>
+        <th>N° PLAQUE</th>
+        <th>1ere PARTIE</th>
+        <th>2eme PARTIE</th>
+        <th>3eme PARTIE</th>
+        <th>4eme PARTIE</th>
+      </tr>
+      <tbody id="table-body">
+      </tbody>
+    </table>
     <div id="config">
-      <h1>Feuille de match</h1>
-      <label for="numberOfPlayers">Nombre de joueurs total :</label>
-      <select name="numberOfPlayers" id="numberOfPlayers">
-      </select>
-      <label for="numberOfPlayersPerTeam">Nombre de joueurs par équipe :</label>
-      <select name="numberOfPlayersPerTeam" id="numberOfPlayersPerTeam">
-      </select>
-      <button>Générer une feuille de match aléatoire</button>
+      <button onclick="generateTable()">Générer une feuille de match aléatoire</button>
+      <button onclick="print()">Imprimer</button>
     </div>
-    <div id="tree">
-    </div>
-    <button>Imprimer</button>
   </body>
 </html>
 
