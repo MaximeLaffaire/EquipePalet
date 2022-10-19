@@ -72,7 +72,6 @@
 
       function initialize() {
         const numberOfPlayersArray = [...Array(41).keys()].slice(6);
-        const numberOfPlayersPerTeamArray = [...Array(5).keys()].slice(2);
 
         const selectNumberOfPlayers = document.getElementById('numberOfPlayers');
         for (let number of numberOfPlayersArray) {
@@ -128,7 +127,28 @@
         return numberOfTeams;
       }
 
-      function generateTeams(numberOfPlayers, numberOfPlayersPerTeam) {
+      function changeTeams(teams) {
+        let member = teams[0].pop();
+        for (let i = 1; i < teams.length; i++) {
+            const team = teams[i];
+            const switchMember = team.pop();
+            team.push(member);
+            member = switchMember;
+        }
+        teams[0].push(member);
+      }
+
+      function cloneTeams(teams) {
+        const result = [];
+        for (let i = 0; i < teams.length; i++) {
+            result.push([...teams[i]]);
+        }
+        return result;
+      }
+
+      function generateTeams(numberOfPlayers, numberOfPlayersPerTeam, numberOfGame) {
+        const teamsPerGame = [];
+
         const players = shuffleArray([...Array(numberOfPlayers).keys()].map(n => n + 1));
         const teams = chunkArray(players, numberOfPlayersPerTeam);
         if (teams.length !== calculateNumberOfTeams(numberOfPlayers, numberOfPlayersPerTeam)) {
@@ -142,7 +162,12 @@
           }
         }
 
-        return teams;
+        for (let i = 0; i < numberOfGame; i++) {
+            teamsPerGame.push(cloneTeams(teams));
+            changeTeams(teams);
+        }
+
+        return teamsPerGame;
       }
 
       function generateTable() {  
@@ -166,8 +191,9 @@
           tablebody.appendChild(row);
         }
 
+        const teamsPerGame = generateTeams(numberOfPlayers, numberOfPlayersPerTeam, numberOfGame);
         for (let i = 0; i < numberOfGame; i++) {
-          const teams = generateTeams(numberOfPlayers, numberOfPlayersPerTeam);
+          const teams = teamsPerGame[i];
           const versus = chunkArray(teams, 2);
           for (let j = 1; j <= numberOfPlaques; j++) {
             const row = document.getElementById(`plaque${j}`);
